@@ -71,7 +71,6 @@ void Program::accept(ImpValueVisitor* v) {
 void ImpCODE::interpret(Program* p) {
     env.clear();
     p->accept(this);
-    return;
 }
 
 
@@ -79,6 +78,7 @@ void ImpCODE::interpret(Program* p) {
 void ImpCODE::visit(Program* p) {
     env.add_level();
     p->body->accept(this);
+    env.remove_level();
 }
 
 void ImpCODE::visit(Body* b) {
@@ -86,7 +86,6 @@ void ImpCODE::visit(Body* b) {
     b->vardecs->accept(this);
     b->slist->accept(this);
     env.remove_level();
-    return;
 }
 
 void ImpCODE::visit(VarDecList* decs) {
@@ -135,62 +134,62 @@ void ImpCODE::visit(PrintStatement* s) {
 }
 
 void ImpCODE::visit(IfStatement* s) {
-    cout<<"inicio del if "<<endl;
-    ImpValue  ex=  s->condition->accept(this);
+    int etiqueta_else = etiquetas++;
+    int etiqueta_end = etiquetas++;
 
-    if (ex.bool_value==true){
-        cout<<" Bloque then";
-        s->then->accept(this);
+    s->condition->accept(this);
+    cout << "FJP L" << etiqueta_else << endl;
 
-    } else{
-        cout<<" Bloque else";
+    s->then->accept(this);
+    cout << "UJP L" << etiqueta_end << endl;
+
+    cout << "L" << etiqueta_else << endl;
+
+    if (s->els != nullptr) {
         s->els->accept(this);
     }
-    cout<<"fin del if "<<endl;
 
-    return;
+    cout << "L" << etiqueta_end << endl;
 }
 
 void ImpCODE::visit(WhileStatement* s) {
-    cout << "L " << etiquetas << endl;
-    ImpValue v = s->condition->accept(this);
-    cout << "FJP " << etiquetas +1 << endl;
+    cout << "L" << etiquetas << endl;
+    s->condition->accept(this);
+    cout << "FJP L" << etiquetas +1 << endl;
     s->b->accept(this);
-    cout << "UJP "<<  etiquetas   << endl;
-    cout << "L "<< etiquetas +1 << endl;
+    cout << "UJP L"<<  etiquetas   << endl;
+    cout << "L"<< etiquetas +1 << endl;
     etiquetas = etiquetas+1;
 }
 
 
 void ImpCODE::visit(ForStatement* s) {
-    ImpValue v = ;
-    cout<<"inicio del FOR "<<endl;
-    cout<<"L "<< etiquetas<<endl;
-    cout<<"inicio condicional"<<endl;
-    int inicio=s->start->accept(this).int_value;
-    int final=s->end->accept(this).int_value;
-    int step=s->step->accept(this).int_value;
-    cout<<"fin condicional"<<endl;
-    cout<<"body"<<endl;
-    cout<<"FJP "<<etiquetas+1<<endl;
+    int etiqueta_inicio = etiquetas++;
+    int etiqueta_fin = etiquetas++;
+
+    cout << "LDA idx" << endl;
+    s->start->accept(this);
+    cout << "STOc" << endl;
+
+    cout << "L" << etiqueta_inicio << endl;
+
+    s->end->accept(this);
+    cout << "LDAc idx" << endl;
+    cout << "LES" << endl;
+    cout << "FJP L" << etiqueta_fin << endl;
+
     s->b->accept(this);
-    s->b->accept(this);
-    while (inicio<final){
-        s->b->accept(this);
-        inicio=inicio+step;
-    }
-    cout<<"UJP "<<etiquetas<<endl;
-    cout<<"L "<< etiquetas+1<<endl;
-    cout<<"fin del FOR "<<endl;
 
+    cout << "LDA idx" << endl;
+    cout << "LODc idx" << endl;
+    s->step->accept(this);
+    cout << "ADI" << endl;
+    cout << "STOc" << endl;
 
+    cout << "UJP L" << etiqueta_inicio << endl;
 
-
+    cout << "L" << etiqueta_fin << endl;
 }
-
-
-
-
 
 ImpValue ImpCODE::visit(BinaryExp* e) {
     ImpValue result;
@@ -253,14 +252,15 @@ ImpValue ImpCODE::visit(BinaryExp* e) {
 }
 
 ImpValue ImpCODE::visit(NumberExp* e) {
+    cout << "LDCc " <<  e->value << endl;
     ImpValue v;
     v.set_default_value(TINT);
     v.int_value = e->value;
-    cout << "LDCc " <<  e->value << endl;
     return v;
 }
 
 ImpValue ImpCODE::visit(BoolExp* e) {
+    cout << "LDCc " <<  e->value << endl;
     ImpValue v;
     v.set_default_value(TBOOL);
     v.int_value = e->value;
@@ -270,21 +270,39 @@ ImpValue ImpCODE::visit(BoolExp* e) {
 ImpValue ImpCODE::visit(IdentifierExp* e) {
     if (env.check(e->name))
         cout << "LODc " << e->name <<endl;
-        return env.lookup(e->name);
+    return env.lookup(e->name);
 }
 
 ImpValue ImpCODE::visit(IFExp* e) {
-    cout<<"inicio IFe";
-    ImpValue v = e->cond->accept(this);
-    if (v.type != TBOOL) {
-        cout << "Type error en ifexp: esperaba bool en condicional" << endl;
-        exit(0);
-    }
-    if(v.bool_value){
-        return e->left->accept(this);
-    }
-    else{
-        return e->right->accept(this);
-    }
+//    ImpValue v = e->cond->accept(this);
+//    if (v.type != TBOOL) {
+//        cout << "Type error en ifexp: esperaba bool en condicional" << endl;
+//        exit(0);
+//    }
+//    if(v.bool_value){
+//        return e->left->accept(this);
+//    }
+//    else{
+//        return e->right->accept(this);
+//    }
+
+    int etiqueta_else = etiquetas++;
+    int etiqueta_end = etiquetas++;
+
+    e->cond->accept(this);
+    cout << "FJP L" << etiqueta_else << endl;
+
+    e->left->accept(this);
+    cout << "UJP L" << etiqueta_end << endl;
+
+    cout << "L" << etiqueta_else << endl;
+
+    e->right->accept(this);
+
+    cout << "L" << etiqueta_end << endl;
+
+    ImpValue v;
+    v.type = TINT;
+    return v;
 }
 
