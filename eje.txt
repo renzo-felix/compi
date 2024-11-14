@@ -1,8 +1,2 @@
-var int x,y,z;
-x = 0;
-y = 1;
-for(0,5,1)
-    z = x+y;
-    x = y;
-    y = z
-endfor
+var int y;
+y = ifexp(2<5,10,20)
