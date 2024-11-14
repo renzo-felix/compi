@@ -167,16 +167,24 @@ void ImpCODE::visit(ForStatement* s) {
     int etiqueta_inicio = etiquetas++;
     int etiqueta_fin = etiquetas++;
 
+    cout << "LDA idx" << endl;
     s->start->accept(this);
+    cout << "STOc" << endl;
 
     cout << "L" << etiqueta_inicio << endl;
 
     s->end->accept(this);
+    cout << "LDAc idx" << endl;
+    cout << "LES" << endl;
     cout << "FJP L" << etiqueta_fin << endl;
 
     s->b->accept(this);
 
+    cout << "LDA idx" << endl;
+    cout << "LODc idx" << endl;
     s->step->accept(this);
+    cout << "ADI" << endl;
+    cout << "STOc" << endl;
 
     cout << "UJP L" << etiqueta_inicio << endl;
 
